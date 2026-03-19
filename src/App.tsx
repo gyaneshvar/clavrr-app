@@ -1,5 +1,7 @@
 import { ArrowRight, CheckCircle2, ChevronRight, ShieldCheck, Sparkles } from 'lucide-react'
 import { motion } from 'motion/react'
+import { type FormEvent, useEffect, useMemo, useState } from 'react'
+import { Menu, X } from 'lucide-react'
 
 import { GlowingEffectDemo } from '@/components/ui/glowing-effect-demo'
 import { SplineSceneBasic } from '@/components/ui/spline-demo'
@@ -10,7 +12,6 @@ const navItems = [
   { label: 'Use Cases', href: '#use-cases' },
   { label: 'Outcomes', href: '#outcomes' },
   { label: 'Security', href: '#security' },
-  { label: 'FAQs', href: '#faqs' },
 ]
 
 const workflowSteps = [
@@ -66,28 +67,6 @@ const pilotTimeline = [
   'Week 4: KPI validation and scale roadmap',
 ]
 
-const faqs = [
-  {
-    question: 'How quickly can we go live?',
-    answer:
-      'Most pilots launch in 2-4 weeks depending on complexity and integration scope.',
-  },
-  {
-    question: 'Do we need to replace current tools?',
-    answer:
-      'No. Clavrr is designed to orchestrate across your existing systems and workflows.',
-  },
-  {
-    question: 'What process should we automate first?',
-    answer:
-      'Start where delays are frequent, handoffs are manual, and business impact is measurable.',
-  },
-  {
-    question: 'How do we define success?',
-    answer:
-      'We baseline KPIs first, then measure cycle time, throughput, quality, and cost impact.',
-  },
-]
 
 function SectionHeader({
   eyebrow,
@@ -108,6 +87,98 @@ function SectionHeader({
 }
 
 function App() {
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
+  const [activeSection, setActiveSection] = useState('how-it-works')
+  const [formResult, setFormResult] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const sectionIds = useMemo(
+    () => navItems.map((item) => item.href.replace('#', '')),
+    [],
+  )
+
+  useEffect(() => {
+    const sectionElements = sectionIds
+      .map((id) => document.getElementById(id))
+      .filter((el): el is HTMLElement => !!el)
+
+    if (sectionElements.length === 0) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0]
+
+        if (visible?.target?.id) {
+          setActiveSection(visible.target.id)
+        }
+      },
+      {
+        rootMargin: '-30% 0px -45% 0px',
+        threshold: [0.2, 0.45, 0.7],
+      },
+    )
+
+    sectionElements.forEach((section) => observer.observe(section))
+
+    return () => observer.disconnect()
+  }, [sectionIds])
+
+  useEffect(() => {
+    const handleEsc = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsDrawerOpen(false)
+      }
+    }
+
+    window.addEventListener('keydown', handleEsc)
+
+    return () => {
+      window.removeEventListener('keydown', handleEsc)
+    }
+  }, [])
+
+  useEffect(() => {
+    document.body.style.overflow = isDrawerOpen ? 'hidden' : ''
+
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [isDrawerOpen])
+
+  const handlePilotSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+
+    const target = event.currentTarget
+    const formData = new FormData(target)
+    formData.append('access_key', 'f1843e96-faf9-4ada-bc36-8bd4b2544d83')
+    formData.append('subject', 'New Clavrr pilot request')
+
+    setIsSubmitting(true)
+    setFormResult('Sending...')
+
+    try {
+      const response = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setFormResult('Thanks. Your request has been submitted successfully.')
+        target.reset()
+      } else {
+        setFormResult('Could not submit right now. Please email admin@clavrr.com.')
+      }
+    } catch {
+      setFormResult('Network issue. Please email admin@clavrr.com.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   return (
     <div className="relative">
       <div className="ambient ambient-top" />
@@ -126,23 +197,84 @@ function App() {
                 CLAVRR
               </span>
               <span className="mt-1 text-[10px] leading-none tracking-[0.16em] text-[#35667c] uppercase">
-                Clarity. Control. Compliance.
+                Business. Optimized.
               </span>
             </div>
           </a>
 
           <div className="hidden items-center gap-6 md:flex">
             {navItems.map((item) => (
-              <a key={item.label} href={item.href} className="nav-link">
+              <a
+                key={item.label}
+                href={item.href}
+                className={cn(
+                  'nav-link',
+                  activeSection === item.href.replace('#', '') && 'nav-link-active',
+                )}
+              >
                 {item.label}
               </a>
             ))}
           </div>
 
-          <a href="#cta" className="btn-primary hidden md:inline-flex">
+          <a href="#cta" className="btn-primary !hidden md:!inline-flex">
             Start Pilot
           </a>
+
+          <button
+            type="button"
+            className="mobile-nav-trigger md:hidden"
+            aria-label={isDrawerOpen ? 'Close navigation menu' : 'Open navigation menu'}
+            aria-expanded={isDrawerOpen}
+            onClick={() => setIsDrawerOpen((prev) => !prev)}
+          >
+            {isDrawerOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+          </button>
         </nav>
+
+        <div className={cn('mobile-drawer-shell md:hidden', isDrawerOpen && 'open')}>
+          <button
+            type="button"
+            className="mobile-drawer-backdrop"
+            aria-label="Close navigation menu"
+            onClick={() => setIsDrawerOpen(false)}
+          />
+          <aside className="mobile-drawer-panel" aria-hidden={!isDrawerOpen}>
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold tracking-[0.16em] text-[#2f5a72] uppercase">
+                Navigate
+              </p>
+              <button
+                type="button"
+                className="mobile-nav-trigger"
+                aria-label="Close navigation menu"
+                onClick={() => setIsDrawerOpen(false)}
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="mt-6 flex flex-col gap-1.5">
+              {navItems.map((item) => (
+                <a
+                  key={item.label}
+                  href={item.href}
+                  className={cn(
+                    'mobile-nav-link',
+                    activeSection === item.href.replace('#', '') && 'mobile-nav-link-active',
+                  )}
+                  onClick={() => setIsDrawerOpen(false)}
+                >
+                  {item.label}
+                </a>
+              ))}
+            </div>
+
+            <a href="#cta" className="btn-primary mt-6 justify-center" onClick={() => setIsDrawerOpen(false)}>
+              Start Pilot
+            </a>
+          </aside>
+        </div>
       </header>
 
       <main
@@ -159,7 +291,7 @@ function App() {
             >
               <p className="section-eyebrow">AI WORKFLOW ORCHESTRATION</p>
               <h1 className="hero-title mt-4">
-                Automate the Delays. Accelerate the Outcomes.
+                Delays Detected. Outcomes Automated.
               </h1>
               <p className="hero-copy mt-5 max-w-xl">
                 Clavrr transforms repetitive operational bottlenecks into reliable,
@@ -169,7 +301,7 @@ function App() {
 
               <div className="mt-8 flex flex-wrap gap-3">
                 <a href="#cta" className="btn-primary">
-                  Start a 30-Day Pilot
+                  Start Pilot
                   <ArrowRight className="h-4 w-4" />
                 </a>
                 <a href="#use-cases" className="btn-secondary">
@@ -307,7 +439,7 @@ function App() {
                 <p className="metric-label">Workflow Throughput Lift</p>
               </div>
               <div>
-                <p className="metric-value">2-4 Weeks</p>
+                <p className="metric-value">4-8 Weeks</p>
                 <p className="metric-label">Pilot to Go-Live</p>
               </div>
             </div>
@@ -340,11 +472,14 @@ function App() {
           id="security"
           className="section-wrap rounded-3xl border border-[#d5dfe5] bg-[#13293f] p-8 text-[#dbe8ef] md:p-10"
         >
-          <SectionHeader
-            eyebrow="SECURITY AND COMPLIANCE"
-            title="Enterprise controls from day one."
-            description="Built for security-conscious operations with role boundaries, traceability, and deployment discipline."
-          />
+          <div className="max-w-3xl">
+            <p className="section-eyebrow !text-[#8eb8cc]">SECURITY AND COMPLIANCE</p>
+            <h2 className="section-title !text-[#b5e9f4]">Enterprise controls from day one.</h2>
+            <p className="section-description !text-[#c6dbe7]">
+              Built for security-conscious operations with role boundaries, traceability, and
+              deployment discipline.
+            </p>
+          </div>
 
           <div className="mt-8 grid gap-3 md:grid-cols-2">
             {[
@@ -361,44 +496,76 @@ function App() {
           </div>
         </section>
 
-        <section id="faqs" className="section-wrap">
-          <SectionHeader
-            eyebrow="FAQ"
-            title="Answers for operators, buyers, and implementation teams."
-            description="Short and practical responses based on real deployment conversations."
-          />
-
-          <div className="mt-8 grid gap-4 md:grid-cols-2">
-            {faqs.map((item) => (
-              <article key={item.question} className="faq-card">
-                <h3 className="text-lg font-bold text-[#163550]">{item.question}</h3>
-                <p className="mt-2 text-[#3b5a6d]">{item.answer}</p>
-              </article>
-            ))}
-          </div>
-        </section>
-
         <section
           id="cta"
           className="relative overflow-hidden rounded-[2rem] border border-[#164461]/30 bg-[linear-gradient(135deg,#17324b_0%,#1d8ca1_100%)] p-8 text-white md:p-11"
         >
           <div className="pointer-events-none absolute right-0 bottom-[-4.5rem] h-64 w-64 rounded-full bg-white/20 blur-3xl" />
           <div className="pointer-events-none absolute left-0 top-[-4.5rem] h-64 w-64 rounded-full bg-cyan-200/20 blur-3xl" />
-          <p className="section-eyebrow !text-[#b5e9f4]">START HERE</p>
-          <h2 className="mt-3 text-3xl font-extrabold md:text-4xl">
-            Pick one workflow. We will make it measurable, automated, and scalable.
-          </h2>
-          <p className="mt-4 max-w-2xl text-[#daf4fb]">
-            Launch a Clavrr pilot to move from process friction to operational
-            momentum in weeks.
-          </p>
-          <div className="mt-7 flex flex-wrap gap-3">
-            <a href="#top" className="btn-contrast">
-              Launch Your Clavrr Pilot
-            </a>
-            <a href="#how-it-works" className="btn-ghost">
-              Review Method
-            </a>
+          <div className="pilot-contact-grid relative z-10">
+            <div>
+              <p className="section-eyebrow !text-[#b5e9f4]">START HERE</p>
+              <h2 className="mt-3 text-3xl font-extrabold md:text-4xl">
+                Start your pilot request with Clavrr.
+              </h2>
+              <p className="mt-4 max-w-xl text-[#daf4fb]">
+                Tell us the workflow you want to improve. We will respond with a
+                scoped pilot plan and timeline.
+              </p>
+              <p className="mt-6 text-sm text-[#d8f1f8]">
+                Prefer email?{' '}
+                <a
+                  href="mailto:admin@clavrr.com"
+                  className="font-semibold text-white underline decoration-[#bde7f5] underline-offset-4"
+                >
+                  admin@clavrr.com
+                </a>
+              </p>
+            </div>
+
+            <form className="pilot-form" onSubmit={handlePilotSubmit}>
+              <div className="pilot-form-row">
+                <label htmlFor="pilot-name" className="pilot-form-label">
+                  Name
+                </label>
+                <input id="pilot-name" name="name" type="text" required className="pilot-form-input" />
+              </div>
+
+              <div className="pilot-form-row">
+                <label htmlFor="pilot-email" className="pilot-form-label">
+                  Work Email
+                </label>
+                <input
+                  id="pilot-email"
+                  name="email"
+                  type="email"
+                  required
+                  className="pilot-form-input"
+                />
+              </div>
+
+              <div className="pilot-form-row">
+                <label htmlFor="pilot-message" className="pilot-form-label">
+                  Workflow To Automate
+                </label>
+                <textarea
+                  id="pilot-message"
+                  name="message"
+                  required
+                  rows={4}
+                  className="pilot-form-input pilot-form-textarea"
+                  placeholder="Describe the delay-heavy process you want to improve."
+                />
+              </div>
+
+              <button type="submit" className="btn-contrast w-full justify-center" disabled={isSubmitting}>
+                {isSubmitting ? 'Sending...' : 'Submit Pilot Request'}
+              </button>
+
+              <p className="pilot-form-result" role="status" aria-live="polite">
+                {formResult}
+              </p>
+            </form>
           </div>
         </section>
 
@@ -413,7 +580,7 @@ function App() {
               </p>
             </div>
             <p className="font-mono text-xs tracking-[0.14em] text-[#4c748a] uppercase">
-              Automate the Delays. Accelerate the Outcomes.
+              Delays Detected. Outcomes Automated.
             </p>
           </div>
         </footer>

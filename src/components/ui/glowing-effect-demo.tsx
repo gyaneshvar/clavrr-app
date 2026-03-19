@@ -5,51 +5,47 @@ import { cn } from '@/lib/utils'
 
 export function GlowingEffectDemo() {
   return (
-    <ul className="grid grid-cols-1 grid-rows-none gap-4 md:grid-cols-12 md:grid-rows-3 lg:gap-4 xl:grid-rows-2">
+    <ul className="grid grid-cols-2 gap-4">
       <GridItem
-        area="md:[grid-area:1/1/2/7] xl:[grid-area:1/1/2/5]"
         icon={<Box className="h-4 w-4" />}
         title="Map Workflow Bottlenecks"
         description="Expose hidden process friction before you automate."
       />
       <GridItem
-        area="md:[grid-area:1/7/2/13] xl:[grid-area:2/1/3/5]"
-        icon={<Settings className="h-4 w-4" />}
-        title="Design Agent Interventions"
-        description="Choose high-impact points where AI creates measurable gains."
-      />
-      <GridItem
-        area="md:[grid-area:2/1/3/7] xl:[grid-area:1/5/3/8]"
-        icon={<Lock className="h-4 w-4" />}
-        title="Human-Controlled Decisions"
-        description="Keep approvals in the loop for trust, safety, and accountability."
-      />
-      <GridItem
-        area="md:[grid-area:2/7/3/13] xl:[grid-area:1/8/2/13]"
         icon={<Sparkles className="h-4 w-4" />}
         title="Deploy in Weeks"
         description="Integrate quickly and start improving cycle times immediately."
       />
       <GridItem
-        area="md:[grid-area:3/1/4/13] xl:[grid-area:2/8/3/13]"
+        icon={<Settings className="h-4 w-4" />}
+        title="Design Agent Interventions"
+        description="Choose high-impact points where AI creates measurable gains."
+      />
+      <GridItem
         icon={<Search className="h-4 w-4" />}
         title="Measure Real ROI"
         description="Track reduced delays, fewer handoffs, and stronger throughput."
+      />
+      <GridItem
+        className="col-span-2"
+        icon={<Lock className="h-4 w-4" />}
+        title="Human-Controlled Decisions"
+        description="Keep approvals in the loop for trust, safety, and accountability."
       />
     </ul>
   )
 }
 
 interface GridItemProps {
-  area: string
+  className?: string
   icon: React.ReactNode
   title: string
   description: React.ReactNode
 }
 
-function GridItem({ area, icon, title, description }: GridItemProps) {
+function GridItem({ className, icon, title, description }: GridItemProps) {
   return (
-    <li className={cn('min-h-[14rem] list-none', area)}>
+    <li className={cn('min-h-[12rem] list-none', className)}>
       <div className="relative h-full rounded-[1.25rem] border-[0.75px] border-border bg-white/40 p-2 backdrop-blur-sm md:rounded-[1.5rem] md:p-3">
         <GlowingEffect
           spread={40}

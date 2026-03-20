@@ -197,7 +197,7 @@ function App() {
                 CLAVRR
               </span>
               <span className="mt-1 text-[10px] leading-none tracking-[0.16em] text-[#35667c] uppercase">
-                Business. Optimized.
+                Business Optimized
               </span>
             </div>
           </a>
